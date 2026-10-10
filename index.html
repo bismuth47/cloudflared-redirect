@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>転送中...</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #0f172a; color: #e2e8f0; }
+  .card { text-align: center; padding: 2rem; max-width: 480px; }
+  .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top-color: #38bdf8; border-radius: 50%; margin: 0 auto 1rem; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  a { color: #38bdf8; word-break: break-all; }
+  .meta { color: #94a3b8; font-size: 0.85rem; margin-top: 1rem; }
+  .error { color: #fca5a5; }
+  button { margin-top: 1rem; padding: 0.5rem 1.2rem; border-radius: 8px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="spinner" id="spinner"></div>
+  <h1 id="status">最新のURLを取得中...</h1>
+  <p id="detail">cloudflared の公開先に転送します</p>
+  <p class="meta" id="meta"></p>
+  <div><a id="manual" href="#" style="display:none"></a></div>
+  <div><button id="retry" style="display:none" onclick="load()">再試行</button></div>
+</div>
+
+<script>
+// ===== 設定: ここだけ書き換えてください =====
+const GIST_ID = "ace74a8eec7a4f2ad49aa11c7e222412"; // 例: "a1b2c3d4e5f6..."
+const FILE_NAME = "cloudflared-url.json";
+const RETRY_INTERVAL_MS = 10000; // 取得失敗時の再試行間隔
+// ==========================================
+
+async function load() {
+  const status = document.getElementById("status");
+  const detail = document.getElementById("detail");
+  const meta = document.getElementById("meta");
+  const manual = document.getElementById("manual");
+  const retry = document.getElementById("retry");
+  const spinner = document.getElementById("spinner");
+
+  if (GIST_ID === "YOUR_GIST_ID") {
+    spinner.style.display = "none";
+    status.textContent = "設定が必要です";
+    detail.innerHTML = '<span class="error">index.html の GIST_ID を書き換えてください。詳しくは README.md</span>';
+    return;
+  }
+
+  try {
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Gist取得失敗: ${res.status}`);
+    const gist = await res.json();
+    const file = gist.files && gist.files[FILE_NAME];
+    if (!file) throw new Error(`Gist内に ${FILE_NAME} がありません`);
+    const data = JSON.parse(file.content);
+
+    if (!data.url) throw new Error("まだURLが登録されていません（PC側で updater を起動してください）");
+
+    status.textContent = "転送中...";
+    detail.textContent = "まもなく移動します";
+    meta.textContent = `転送先: ${data.url}` + (data.updatedAt ? ` (更新: ${data.updatedAt})` : "");
+    manual.href = data.url;
+    manual.textContent = data.url;
+    manual.style.display = "inline";
+    // 即リダイレクト
+    location.href = data.url;
+  } catch (e) {
+    console.error(e);
+    spinner.style.display = "none";
+    status.textContent = "取得できませんでした";
+    detail.innerHTML = `<span class="error">${escapeHtml(e.message)}</span>`;
+    retry.style.display = "inline-block";
+    setTimeout(load, RETRY_INTERVAL_MS);
+  }
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+load();
+</script>
+</body>
+</html>

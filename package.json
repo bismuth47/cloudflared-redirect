@@ -1,0 +1,8 @@
+{
+  "name": "cloudflared-redirect",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "tunnel": "node scripts/update-gist.js"
+  }
+}
