@@ -25,7 +25,7 @@ const URL_RE = /https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.trycloudflare\.com/i;
 const DEFAULTS = {
   port: 25565,
   cloudflared: "cloudflared",
-  heartbeatMs: 60000,
+  heartbeatMs: 300000,
   readyTimeoutMs: 30000,
   serverName: "Eaglercraft Server",
   motd: "",

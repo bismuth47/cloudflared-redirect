@@ -100,7 +100,7 @@ $env:GITHUB_TOKEN="ghp_xxx"
 2. `cloudflared tunnel --url http://localhost:25565` を起動
 3. ログ中の `https://xxx.trycloudflare.com` を検出し、Gist を更新 (`[OK] Gist更新: ...`)
 4. トンネル経由の疎通確認 (`[確認] ... -> HTTP 404 (WebSocket アドレスなので 404 が正常)`)
-5. 以降 60 秒ごとに Gist を更新 (ハートビート) — Vercel ページが「最終更新」を表示するため
+5. 以降 5 分ごとに Gist を更新 (ハートビート) — Vercel ページが「最終更新」を表示するため
 6. `Ctrl+C` または cloudflared 終了で Gist の `url` をクリア (死んだ URL を残さない)
 
 ## 4. Vercel へのデプロイ
@@ -149,7 +149,7 @@ Vercel のページから自動で転送はしません (アドレスを確認�
 ```
 
 - `url` / `host` が `null` の間、Vercel ページは「トンネル未接続」と表示
-- `updatedAt` が 5 分以上古い場合、ページは「停止している可能性」と警告
+- `updatedAt` が 15 分以上古い場合、ページは「停止している可能性」と警告
 
 Gist を作り直す場合は `gist-initial.json` の中身をそのまま貼り付けてください
 (ファイル名は `cloudflared-url.json`、**Public 推奨**)。
@@ -160,7 +160,7 @@ Gist を作り直す場合は `gist-initial.json` の中身をそのまま貼り
 | --- | --- |
 | Vercel ページが「トンネル未接続」 | updater が動いていません。`GITHUB_TOKEN` を確認して再起動 |
 | Vercel ページが「取得できませんでした」 | GitHub API のレート制限 (未認証取得は 60 回/時/IP)。しばらく待って再取得 |
-| ページが古いアドレスを表示 | updater のハートビート (60 秒) が止まっている可能性。PC のスリープ解除後に自動で更新 |
+| ページが古いアドレスを表示 | updater のハートビート (5 分) が止まっている可能性。PC のスリープ解除後に自動で更新 |
 | 接続時にタイムアウト | `cloudflared` が起動しているか、`localhost:25565` に待受があるか確認 |
 | `localhost:25565` が待受していない | Minecraft サーバーが起動していません (`run.bat`) |
 | 404 が返る | 正常です。WebSocket 用のエンドポイントなので、ブラウザではなくクライアントから接続します |

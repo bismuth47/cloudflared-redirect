@@ -121,13 +121,15 @@
 // ===== 設定: ここだけ書き換えてください =====
 const GIST_ID = "ace74a8eec7a4f2ad49aa11c7e222412";
 const FILE_NAME = "cloudflared-url.json";
-const REFRESH_INTERVAL_MS = 30000;        // 取得できた状態での更新間隔
-const RETRY_INTERVAL_MS = 10000;           // 取得失敗・未接続時の再試行間隔
-const STALE_AFTER_MS = 5 * 60 * 1000;      // 最終更新がこれより古ければ停止の疑い
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;  // 取得できた状態での更新間隔 (5分)
+const RETRY_INTERVAL_MS = 15000;            // 未接続・失敗時の初回リトライ間隔
+const RETRY_MAX_MS = 60000;                 // リトライ間隔の上限 (指数バックオフ)
+const STALE_AFTER_MS = 15 * 60 * 1000;      // 最終更新がこれより古ければ停止の疑い
 // ==========================================
 
 const $ = (id) => document.getElementById(id);
 let timer = null;
+let retryDelay = RETRY_INTERVAL_MS;
 
 const MC_COLORS = {
   "0": "#000000", "1": "#0000AA", "2": "#00AA00", "3": "#00AAAA",
@@ -223,7 +225,8 @@ async function load() {
       statusEl.textContent = "トンネル未接続";
       statusEl.className = "status off";
       $("retryBox").style.display = "block";
-      schedule(load, RETRY_INTERVAL_MS);
+      schedule(load, retryDelay);
+      retryDelay = Math.min(retryDelay * 2, RETRY_MAX_MS);
       return;
     }
 
@@ -245,6 +248,7 @@ async function load() {
     }
 
     spinner.style.display = "none";
+    retryDelay = RETRY_INTERVAL_MS;
     schedule(load, REFRESH_INTERVAL_MS);
   } catch (e) {
     console.error(e);
@@ -253,7 +257,8 @@ async function load() {
     statusEl.className = "status err";
     $("meta").style.display = "flex";
     $("retryBox").style.display = "block";
-    schedule(load, RETRY_INTERVAL_MS);
+    schedule(load, retryDelay);
+    retryDelay = Math.min(retryDelay * 2, RETRY_MAX_MS);
   }
 }
 

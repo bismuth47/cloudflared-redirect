@@ -13,7 +13,7 @@ param(
   [string]$ServerName = $env:SERVER_NAME,
   [string]$Motd = $env:MOTD,
   [string]$Protocols = $env:PROTOCOLS,
-  [int]$HeartbeatSeconds = 60,
+  [int]$HeartbeatSeconds = 300,
   [int]$ReadyTimeoutSeconds = 30
 )
 
