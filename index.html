@@ -90,8 +90,9 @@
       <button id="copyBtn" type="button">コピー</button>
     </div>
     <p class="hint">
+      コピーされるのは <b>ホスト名のみ</b> です（<code>https://</code> は付きません）。<br />
       そのまま <b>Multiplayer → Direct Connect</b> へ貼り付けてください。<br />
-      <code>https://</code> を省略すると <code>ws://</code> 接続になり失敗します。ホスト名だけを使う場合は <code id="hostOnly">-</code> です。
+      スキーム付きが必要な場合: <code id="fullUrl">-</code>
     </p>
   </div>
 
@@ -226,9 +227,10 @@ async function load() {
       return;
     }
 
+    const host = data.host || new URL(data.url).host;
     $("addressBox").style.display = "block";
-    $("address").textContent = data.url;
-    $("hostOnly").textContent = data.host || new URL(data.url).host;
+    $("address").textContent = host;
+    $("fullUrl").textContent = data.url;
     $("openTunnel").href = data.url;
     $("openTunnel").style.display = "inline";
     $("retryBox").style.display = "none";
