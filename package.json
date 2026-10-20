@@ -1,8 +1,10 @@
 {
   "name": "cloudflared-redirect",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
+  "description": "Eaglercraft サーバーを cloudflared で公開し、その URL を GitHub Gist 経由で Vercel の固定ページに反映する",
   "scripts": {
-    "tunnel": "node scripts/update-gist.js"
+    "tunnel": "node scripts/update-gist.js",
+    "tunnel:ps": "powershell -ExecutionPolicy Bypass -File scripts/update-gist.ps1"
   }
 }

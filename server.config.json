@@ -1,0 +1,6 @@
+{
+  "serverName": "My Eaglercraft Server",
+  "motd": "&6An EaglercraftX server",
+  "protocols": "1.5 / 1.8 / 1.12",
+  "port": 25565
+}

@@ -3,82 +3,285 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>転送中...</title>
+<title>Eaglercraft サーバー</title>
 <style>
-  body { font-family: system-ui, -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #0f172a; color: #e2e8f0; }
-  .card { text-align: center; padding: 2rem; max-width: 480px; }
-  .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top-color: #38bdf8; border-radius: 50%; margin: 0 auto 1rem; animation: spin 0.8s linear infinite; }
+  :root {
+    --bg: #0b1020;
+    --card: #131a2e;
+    --line: #26314d;
+    --text: #e6ecff;
+    --muted: #93a0c0;
+    --accent: #6ee7a8;
+    --warn: #fbbf24;
+    --err: #fca5a5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; margin: 0; padding: 24px;
+    background: radial-gradient(1200px 600px at 50% -10%, #1b2547 0%, var(--bg) 60%);
+    color: var(--text);
+  }
+  .card {
+    width: 100%; max-width: 620px;
+    background: var(--card); border: 2px solid var(--line); border-radius: 12px;
+    padding: 28px 24px; box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  }
+  h1 { font-size: 1.45rem; margin: 0 0 .35rem; letter-spacing: .02em; }
+  .motd { color: var(--muted); margin: 0 0 1.4rem; min-height: 1.2em; }
+  .motd .mc-bold { font-weight: 700; }
+  .motd .mc-italic { font-style: italic; }
+  .motd .mc-underline { text-decoration: underline; }
+  .motd .mc-strike { text-decoration: line-through; }
+
+  .label { font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin-bottom: .5rem; }
+  .addr {
+    display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap;
+    background: #0a0f1e; border: 2px solid var(--line); border-radius: 10px; padding: 10px;
+  }
+  .addr code {
+    flex: 1 1 320px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 1.02rem; word-break: break-all; padding: 8px 6px; color: var(--accent);
+  }
+  button {
+    font: inherit; cursor: pointer; border: none; border-radius: 8px;
+    padding: 10px 16px; background: var(--accent); color: #06210f; font-weight: 700;
+  }
+  button.secondary { background: #26314d; color: var(--text); font-weight: 600; }
+  button:hover { filter: brightness(1.08); }
+  .hint { color: var(--muted); font-size: .82rem; margin-top: .6rem; }
+  .hint code { color: #b9c6e8; }
+
+  .steps { margin: 1.5rem 0 0; padding-left: 1.3rem; color: var(--muted); }
+  .steps li { margin: .35rem 0; }
+  .steps b { color: var(--text); }
+
+  .meta {
+    display: flex; flex-wrap: wrap; gap: .5rem 1.4rem;
+    border-top: 1px solid var(--line); margin-top: 1.6rem; padding-top: 1rem;
+    color: var(--muted); font-size: .84rem;
+  }
+  .meta span b { color: var(--text); font-weight: 600; }
+  .status { font-weight: 700; }
+  .status.on { color: var(--accent); }
+  .status.off { color: var(--warn); }
+  .status.err { color: var(--err); }
+
+  a { color: var(--accent); }
+  .footer { margin-top: 1.2rem; font-size: .82rem; color: var(--muted); }
+  .spinner {
+    width: 34px; height: 34px; border: 4px solid #2b3654; border-top-color: var(--accent);
+    border-radius: 50%; margin: 0 auto 1rem; animation: spin .8s linear infinite;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
-  a { color: #38bdf8; word-break: break-all; }
-  .meta { color: #94a3b8; font-size: 0.85rem; margin-top: 1rem; }
-  .error { color: #fca5a5; }
-  button { margin-top: 1rem; padding: 0.5rem 1.2rem; border-radius: 8px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="spinner" id="spinner"></div>
-  <h1 id="status">最新のURLを取得中...</h1>
-  <p id="detail">cloudflared の公開先に転送します</p>
-  <p class="meta" id="meta"></p>
-  <div><a id="manual" href="#" style="display:none"></a></div>
-  <div><button id="retry" style="display:none" onclick="load()">再試行</button></div>
+  <h1 id="title">サーバーを読み込み中...</h1>
+  <p class="motd" id="motd"></p>
+
+  <div id="addressBox" style="display:none">
+    <div class="label">接続アドレス (Direct Connect に入力)</div>
+    <div class="addr">
+      <code id="address">-</code>
+      <button id="copyBtn" type="button">コピー</button>
+    </div>
+    <p class="hint">
+      そのまま <b>Multiplayer → Direct Connect</b> へ貼り付けてください。<br />
+      <code>https://</code> を省略すると <code>ws://</code> 接続になり失敗します。ホスト名だけを使う場合は <code id="hostOnly">-</code> です。
+    </p>
+  </div>
+
+  <ol class="steps" id="steps" style="display:none">
+    <li>Eaglercraft クライアント (Web / デスクトップ / Android) を起動する</li>
+    <li><b>Multiplayer</b> 画面で <b>Direct Connect</b> を選ぶ</li>
+    <li>上の接続アドレスを貼り付けて <b>Done</b> / <b>Join Server</b></li>
+  </ol>
+
+  <div class="meta" id="meta" style="display:none">
+    <span>状態: <span class="status" id="status">-</span></span>
+    <span>対応: <b id="protocols">-</b></span>
+    <span>ポート: <b id="port">-</b></span>
+    <span>最終更新: <b id="updatedAt">-</b></span>
+  </div>
+
+  <div class="footer">
+    <a id="openTunnel" href="#" target="_blank" rel="noreferrer" style="display:none">トンネル上のページを直接開く</a>
+    <div id="retryBox" style="display:none; margin-top:.8rem">
+      <button class="secondary" id="retryBtn" type="button">再取得</button>
+    </div>
+  </div>
 </div>
 
 <script>
 // ===== 設定: ここだけ書き換えてください =====
-const GIST_ID = "ace74a8eec7a4f2ad49aa11c7e222412"; // 例: "a1b2c3d4e5f6..."
+const GIST_ID = "ace74a8eec7a4f2ad49aa11c7e222412";
 const FILE_NAME = "cloudflared-url.json";
-const RETRY_INTERVAL_MS = 10000; // 取得失敗時の再試行間隔
+const REFRESH_INTERVAL_MS = 30000;        // 取得できた状態での更新間隔
+const RETRY_INTERVAL_MS = 10000;           // 取得失敗・未接続時の再試行間隔
+const STALE_AFTER_MS = 5 * 60 * 1000;      // 最終更新がこれより古ければ停止の疑い
 // ==========================================
 
-async function load() {
-  const status = document.getElementById("status");
-  const detail = document.getElementById("detail");
-  const meta = document.getElementById("meta");
-  const manual = document.getElementById("manual");
-  const retry = document.getElementById("retry");
-  const spinner = document.getElementById("spinner");
+const $ = (id) => document.getElementById(id);
+let timer = null;
 
-  if (GIST_ID === "YOUR_GIST_ID") {
+const MC_COLORS = {
+  "0": "#000000", "1": "#0000AA", "2": "#00AA00", "3": "#00AAAA",
+  "4": "#AA0000", "5": "#AA00AA", "6": "#FFAA00", "7": "#AAAAAA",
+  "8": "#555555", "9": "#5555FF", "a": "#55FF55", "b": "#55FFFF",
+  "c": "#FF5555", "d": "#FF55FF", "e": "#FFFF55", "f": "#FFFFFF"
+};
+
+// Minecraft /arega 形式 ( &a / §a ) のカラーコードを HTML へ変換
+function formatMotd(text) {
+  if (!text) return "";
+  const codes = /[&§]([0-9a-fk-orA-FK-OR])/g;
+  let out = "";
+  let open = 0;
+  let last = 0;
+  let m;
+  while ((m = codes.exec(text)) !== null) {
+    out += escapeHtml(text.slice(last, m.index));
+    last = codes.lastIndex;
+    const c = m[1].toLowerCase();
+    if (c === "r") {
+      while (open > 0) { out += "</span>"; open--; }
+    } else if (MC_COLORS[c]) {
+      while (open > 0) { out += "</span>"; open--; }
+      out += `<span style="color:${MC_COLORS[c]}">`;
+      open++;
+    } else if (c === "l") {
+      out += `<span class="mc-bold">`; open++;
+    } else if (c === "o") {
+      out += `<span class="mc-italic">`; open++;
+    } else if (c === "n") {
+      out += `<span class="mc-underline">`; open++;
+    } else if (c === "m") {
+      out += `<span class="mc-strike">`; open++;
+    }
+  }
+  out += escapeHtml(text.slice(last));
+  while (open > 0) { out += "</span>"; open--; }
+  return out;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function formatTime(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleString("ja-JP", { hour12: false });
+}
+
+function schedule(fn, ms) {
+  if (timer) clearTimeout(timer);
+  timer = setTimeout(fn, ms);
+}
+
+async function load() {
+  const spinner = $("spinner");
+  const statusEl = $("status");
+
+  if (GIST_ID === "YOUR_GIST_ID" || !GIST_ID) {
     spinner.style.display = "none";
-    status.textContent = "設定が必要です";
-    detail.innerHTML = '<span class="error">index.html の GIST_ID を書き換えてください。詳しくは README.md</span>';
+    $("title").textContent = "設定が必要です";
+    $("motd").innerHTML = '<span style="color:#fca5a5">index.html の GIST_ID を書き換えてください。詳しくは README.md</span>';
     return;
   }
 
   try {
     const res = await fetch(`https://api.github.com/gists/${GIST_ID}?t=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Gist取得失敗: ${res.status}`);
+    if (!res.ok) {
+      const hint = res.status === 403 ? " (GitHub API のレート制限に達しています。しばらく待って再試行してください)" : "";
+      throw new Error(`Gist取得失敗: ${res.status}${hint}`);
+    }
     const gist = await res.json();
     const file = gist.files && gist.files[FILE_NAME];
     if (!file) throw new Error(`Gist内に ${FILE_NAME} がありません`);
     const data = JSON.parse(file.content);
 
-    if (!data.url) throw new Error("まだURLが登録されていません（PC側で updater を起動してください）");
+    $("title").textContent = data.serverName || "Eaglercraft Server";
+    document.title = data.serverName || "Eaglercraft サーバー";
+    $("motd").innerHTML = formatMotd(data.motd || "");
+    $("protocols").textContent = data.protocols || "-";
+    $("port").textContent = data.port ?? "-";
+    $("updatedAt").textContent = formatTime(data.updatedAt);
+    $("meta").style.display = "flex";
+    $("steps").style.display = "block";
 
-    status.textContent = "転送中...";
-    detail.textContent = "まもなく移動します";
-    meta.textContent = `転送先: ${data.url}` + (data.updatedAt ? ` (更新: ${data.updatedAt})` : "");
-    manual.href = data.url;
-    manual.textContent = data.url;
-    manual.style.display = "inline";
-    // 即リダイレクト
-    location.href = data.url;
+    if (!data.url) {
+      spinner.style.display = "none";
+      $("addressBox").style.display = "none";
+      $("openTunnel").style.display = "none";
+      statusEl.textContent = "トンネル未接続";
+      statusEl.className = "status off";
+      $("retryBox").style.display = "block";
+      schedule(load, RETRY_INTERVAL_MS);
+      return;
+    }
+
+    $("addressBox").style.display = "block";
+    $("address").textContent = data.url;
+    $("hostOnly").textContent = data.host || new URL(data.url).host;
+    $("openTunnel").href = data.url;
+    $("openTunnel").style.display = "inline";
+    $("retryBox").style.display = "none";
+
+    const stale = data.updatedAt && Date.now() - new Date(data.updatedAt).getTime() > STALE_AFTER_MS;
+    if (stale) {
+      statusEl.textContent = "停止している可能性 (最終更新が古い)";
+      statusEl.className = "status off";
+    } else {
+      statusEl.textContent = "オンライン";
+      statusEl.className = "status on";
+    }
+
+    spinner.style.display = "none";
+    schedule(load, REFRESH_INTERVAL_MS);
   } catch (e) {
     console.error(e);
     spinner.style.display = "none";
-    status.textContent = "取得できませんでした";
-    detail.innerHTML = `<span class="error">${escapeHtml(e.message)}</span>`;
-    retry.style.display = "inline-block";
-    setTimeout(load, RETRY_INTERVAL_MS);
+    statusEl.textContent = "取得できませんでした";
+    statusEl.className = "status err";
+    $("meta").style.display = "flex";
+    $("retryBox").style.display = "block";
+    schedule(load, RETRY_INTERVAL_MS);
   }
 }
 
-function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+async function copyAddress() {
+  const btn = $("copyBtn");
+  const text = $("address").textContent;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    btn.textContent = "コピーしました";
+    setTimeout(() => (btn.textContent = "コピー"), 1600);
+  } catch (e) {
+    console.error(e);
+    btn.textContent = "手動でコピー";
+    setTimeout(() => (btn.textContent = "コピー"), 2400);
+  }
 }
 
+$("copyBtn").addEventListener("click", copyAddress);
+$("retryBtn").addEventListener("click", load);
 load();
 </script>
 </body>

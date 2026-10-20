@@ -1,3 +1,10 @@
-# Gist初期ファイル (この内容でGistを作成してください)
-# ファイル名: cloudflared-url.json
-{"url":null,"updatedAt":null,"port":8080}
+{
+  "url": null,
+  "host": null,
+  "port": 25565,
+  "updatedAt": null,
+  "serverName": "My Eaglercraft Server",
+  "motd": "&6An EaglercraftX server",
+  "protocols": "1.5 / 1.8 / 1.12",
+  "online": false
+}
